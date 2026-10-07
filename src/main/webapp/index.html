@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Student Feedback Portal</title>
+</head>
+
+<body>
+
+    <h1>Student Feedback Portal</h1>
+
+    <p>Welcome to the iStudio DevOps CI/CD project.</p>
+
+    <form action="feedback" method="post">
+
+        <label>Name:</label><br>
+        <input type="text" name="name" required><br><br>
+
+        <label>Email:</label><br>
+        <input type="email" name="email" required><br><br>
+
+        <label>Feedback:</label><br>
+        <textarea name="message" rows="5" cols="40" required></textarea><br><br>
+
+        <button type="submit">Submit Feedback</button>
+
+    </form>
+
+    <hr>
+
+    <p>
+        Application Status:
+        <a href="health">Health Check</a>
+    </p>
+
+</body>
+</html>
