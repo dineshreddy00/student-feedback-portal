@@ -1,4 +1,3 @@
-# student-feedback-portal
 # Student Feedback Portal
 
 A simple web-based Student Feedback Portal developed as an iStudio DevOps CI/CD project.
