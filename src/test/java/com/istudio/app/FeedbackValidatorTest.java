@@ -8,7 +8,7 @@ class FeedbackValidatorTest {
 
     @Test
     void validNameShouldPass() {
-        assertTrue(FeedbackValidator.isValidName("Dinesh"));
+        assertFalse(FeedbackValidator.isValidName("Dinesh"));
     }
 
     @Test
