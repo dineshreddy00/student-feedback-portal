@@ -18,7 +18,7 @@ public class HealthServlet extends HttpServlet {
             throws ServletException, IOException {
 
         response.setContentType("text/plain;charset=UTF-8");
-        response.setStatus(HttpServletResponse.SC_OK);
+        response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 
         PrintWriter out = response.getWriter();
 
