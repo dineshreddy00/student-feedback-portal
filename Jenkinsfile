@@ -5,7 +5,6 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                echo 'Checking out source code...'
                 checkout scm
             }
         }
@@ -43,7 +42,8 @@ pipeline {
 
         stage('Archive Artifact') {
             steps {
-                archiveArtifacts artifacts: 'target/*.war', fingerprint: true
+                archiveArtifacts artifacts: 'target/*.war',
+                    fingerprint: true
             }
         }
 
@@ -56,9 +56,9 @@ pipeline {
                     if [ -f /var/lib/tomcat10/webapps/student-feedback-portal.war ]; then
                         cp /var/lib/tomcat10/webapps/student-feedback-portal.war \
                            "$WORKSPACE/rollback/student-feedback-portal.war"
-                        echo "Previous working WAR backed up successfully."
+                        echo "Previous WAR backed up successfully."
                     else
-                        echo "ERROR: No previous WAR available for rollback."
+                        echo "ERROR: No previous WAR available."
                         exit 1
                     fi
                 '''
@@ -67,42 +67,24 @@ pipeline {
 
         stage('Deploy to Tomcat') {
             steps {
-                script {
-                    try {
-                        sh '''
-                            set -e
-                            echo "Removing previous deployed application..."
-                            rm -rf /var/lib/tomcat10/webapps/student-feedback-portal
-                            rm -f /var/lib/tomcat10/webapps/student-feedback-portal.war
+                sh '''
+                    set -e
+                    DEPLOY=/var/lib/tomcat10/webapps
+                    APP="$DEPLOY/student-feedback-portal"
+                    WAR="$DEPLOY/student-feedback-portal.war"
+                    FAILED="$DEPLOY/student-feedback-portal.failed"
 
-                            echo "Deploying new WAR..."
-                            cp target/student-feedback-portal.war \
-                               /var/lib/tomcat10/webapps/student-feedback-portal.war
+                    # Move the extracted app aside instead of deleting its files.
+                    if [ -d "$APP" ]; then
+                        rm -rf "$FAILED"
+                        mv "$APP" "$FAILED"
+                    fi
 
-                            sleep 5
-                            echo "Deployment command completed."
-                        '''
-                    } catch (Exception e) {
-                        echo 'DEPLOYMENT FAILED! Starting rollback...'
-
-                        sh '''
-                            set -e
-                            rm -rf /var/lib/tomcat10/webapps/student-feedback-portal
-                            rm -f /var/lib/tomcat10/webapps/student-feedback-portal.war
-                            cp "$WORKSPACE/rollback/student-feedback-portal.war" \
-                               /var/lib/tomcat10/webapps/student-feedback-portal.war
-                            sleep 5
-                        '''
-
-                        sh '''
-                            curl --fail --show-error --silent \
-                            http://localhost:8081/student-feedback-portal/health
-                        '''
-
-                        echo 'ROLLBACK SUCCESSFUL: previous application restored.'
-                        error('Deployment failed; previous application restored.')
-                    }
-                }
+                    rm -f "$WAR"
+                    cp target/student-feedback-portal.war "$WAR"
+                    sleep 5
+                    echo "Deployment command completed."
+                '''
             }
         }
 
@@ -112,7 +94,7 @@ pipeline {
                     try {
                         sh '''
                             curl --fail --show-error --silent \
-                            http://localhost:8081/student-feedback-portal/health
+                              http://localhost:8081/student-feedback-portal/health
                         '''
                         echo 'HEALTH CHECK PASSED.'
                     } catch (Exception e) {
@@ -120,20 +102,29 @@ pipeline {
 
                         sh '''
                             set -e
-                            rm -rf /var/lib/tomcat10/webapps/student-feedback-portal
-                            rm -f /var/lib/tomcat10/webapps/student-feedback-portal.war
-                            cp "$WORKSPACE/rollback/student-feedback-portal.war" \
-                               /var/lib/tomcat10/webapps/student-feedback-portal.war
-                            sleep 5
+                            DEPLOY=/var/lib/tomcat10/webapps
+                            APP="$DEPLOY/student-feedback-portal"
+                            WAR="$DEPLOY/student-feedback-portal.war"
+                            FAILED="$DEPLOY/student-feedback-portal.failed"
+
+                            # Preserve the failed app rather than deleting its contents.
+                            if [ -d "$APP" ]; then
+                                rm -rf "$FAILED"
+                                mv "$APP" "$FAILED"
+                            fi
+
+                            rm -f "$WAR"
+                            cp "$WORKSPACE/rollback/student-feedback-portal.war" "$WAR"
+                            sleep 8
                         '''
 
                         sh '''
                             curl --fail --show-error --silent \
-                            http://localhost:8081/student-feedback-portal/health
+                              http://localhost:8081/student-feedback-portal/health
                         '''
 
-                        echo 'ROLLBACK SUCCESSFUL: previous application restored.'
-                        error('Health check failed; previous application restored.')
+                        echo 'ROLLBACK SUCCESSFUL: previous WAR restored.'
+                        error('New deployment failed; rollback restored the previous application.')
                     }
                 }
             }
@@ -145,7 +136,7 @@ pipeline {
             echo 'CI/CD PIPELINE COMPLETED SUCCESSFULLY!'
         }
         failure {
-            echo 'PIPELINE FAILED. Check the deployment and rollback messages above.'
+            echo 'PIPELINE FAILED. Check deployment and rollback messages.'
         }
         always {
             echo 'Pipeline execution completed.'
