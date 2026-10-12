@@ -102,7 +102,17 @@ pipeline {
 
                             rm -f "$WAR"
                             cp "$WORKSPACE/rollback/student-feedback-portal.war" "$WAR"
-                            sleep 8
+
+                            for i in $(seq 1 12); do
+                                if curl --fail --silent http://localhost:8081/student-feedback-portal/health; then
+                                    echo "ROLLBACK HEALTH CHECK PASSED."
+                                    exit 0
+                                fi
+                                sleep 5
+                            done
+
+                            echo "ROLLBACK HEALTH CHECK FAILED."
+                            exit 1
                         '''
 
                         sh '''
