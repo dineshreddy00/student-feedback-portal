@@ -1,4 +1,3 @@
-
 pipeline {
     agent any
 
@@ -42,8 +41,7 @@ pipeline {
 
         stage('Archive Artifact') {
             steps {
-                archiveArtifacts artifacts: 'target/*.war',
-                    fingerprint: true
+                archiveArtifacts artifacts: 'target/*.war', fingerprint: true
             }
         }
 
@@ -72,11 +70,9 @@ pipeline {
                     DEPLOY=/var/lib/tomcat10/webapps
                     APP="$DEPLOY/student-feedback-portal"
                     WAR="$DEPLOY/student-feedback-portal.war"
-                    FAILED="$DEPLOY/student-feedback-portal.failed"
+                    FAILED="$DEPLOY/student-feedback-portal.failed-$(date +%s)"
 
-                    # Move the extracted app aside instead of deleting its files.
                     if [ -d "$APP" ]; then
-                        rm -rf "$FAILED"
                         mv "$APP" "$FAILED"
                     fi
 
@@ -105,11 +101,9 @@ pipeline {
                             DEPLOY=/var/lib/tomcat10/webapps
                             APP="$DEPLOY/student-feedback-portal"
                             WAR="$DEPLOY/student-feedback-portal.war"
-                            FAILED="$DEPLOY/student-feedback-portal.failed"
+                            FAILED="$DEPLOY/student-feedback-portal.failed-rollback-$(date +%s)"
 
-                            # Preserve the failed app rather than deleting its contents.
                             if [ -d "$APP" ]; then
-                                rm -rf "$FAILED"
                                 mv "$APP" "$FAILED"
                             fi
 
@@ -124,7 +118,7 @@ pipeline {
                         '''
 
                         echo 'ROLLBACK SUCCESSFUL: previous WAR restored.'
-                        error('New deployment failed; rollback restored the previous application.')
+                        error('New deployment failed; previous WAR restored.')
                     }
                 }
             }
