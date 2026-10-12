@@ -47,19 +47,12 @@ pipeline {
 
         stage('Backup Current Deployment') {
             steps {
-                sh '''
+                sh """
                     set -e
                     mkdir -p "$WORKSPACE/rollback"
-
-                    if [ -f /var/lib/tomcat10/webapps/student-feedback-portal.war ]; then
-                        cp /var/lib/tomcat10/webapps/student-feedback-portal.war \
-                           "$WORKSPACE/rollback/student-feedback-portal.war"
-                        echo "Previous WAR backed up successfully."
-                    else
-                        echo "ERROR: No previous WAR available."
-                        exit 1
-                    fi
-                '''
+                    cp /var/lib/jenkins/rollback-evidence/student-feedback-portal-good.war "$WORKSPACE/rollback/student-feedback-portal.war"
+                    echo "KNOWN-GOOD WAR backed up successfully."
+                """
             }
         }
 
